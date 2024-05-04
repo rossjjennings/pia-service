@@ -12,6 +12,7 @@ requires-python = ">=3.6"
 dependencies = [
     "requests",
     "toml",
+    "jinja2",
 ]
 
 [project.scripts]
