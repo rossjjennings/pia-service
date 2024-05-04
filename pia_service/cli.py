@@ -1,5 +1,5 @@
 from .server_info import list_regions, region_info
-from .get_token import print_token
+from .get_token import test_get_token
 
 def main():
     import argparse
@@ -15,6 +15,8 @@ def main():
     parser_region.add_argument('region', type=str, help="Region to use")
     parser_token = subparsers.add_parser('token',
         help="Obtain an authentication token")
-    parser_token.set_defaults(func=print_token)
+    parser_token.set_defaults(func=test_get_token)
+    parser_token.add_argument('-a', '--askpass', action='store_true',
+        help="Prompt for username and password")
     args = parser.parse_args()
     args.func(args)
