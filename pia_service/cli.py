@@ -1,5 +1,6 @@
 from .server_info import list_regions, region_info
 from .get_token import test_get_token
+from .connect import connect, disconnect
 
 def main():
     import argparse
@@ -18,5 +19,14 @@ def main():
     parser_token.set_defaults(func=test_get_token)
     parser_token.add_argument('-a', '--askpass', action='store_true',
         help="Prompt for username and password")
+    parser_connect = subparsers.add_parser('connect',
+        help="Connect to a PIA VPN server in the specified region")
+    parser_connect.set_defaults(func=connect)
+    parser_connect.add_argument('-a', '--askpass', action='store_true',
+        help="Prompt for username and password")
+    parser_connect.add_argument('region', type=str, help="Specified region")
+    parser_disconnect = subparsers.add_parser('disconnect',
+        help="Disconnect from PIA")
+    parser_disconnect.set_defaults(func=disconnect)
     args = parser.parse_args()
     args.func(args)
