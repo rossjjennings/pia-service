@@ -1,6 +1,7 @@
 from .server_info import list_regions, region_info
-from .auth import login, logout, test_get_token
+from .auth import login, logout
 from .connect import connect, disconnect
+from .status import get_status
 
 def main():
     import argparse
@@ -14,9 +15,6 @@ def main():
         help="List servers in a specified region")
     parser_region.set_defaults(func=region_info)
     parser_region.add_argument('region', type=str, help="Region to use")
-    parser_token = subparsers.add_parser('token',
-        help="Obtain an authentication token")
-    parser_token.set_defaults(func=test_get_token)
     parser_connect = subparsers.add_parser('connect',
         help="Connect to a PIA VPN server in the specified region")
     parser_connect.set_defaults(func=connect)
@@ -24,7 +22,14 @@ def main():
         help="Don't route Tailscale IP addresses (100.64.0.0/10) via PIA")
     parser_connect.add_argument('-6', '--no-disable-ipv6', action='store_true',
         help="Don't disable IPv6 while the PIA connection is active")
+    parser_connect.add_argument('hostname', nargs='?', default=None,
+        help="Hostname of specific server to connect to")
     parser_connect.add_argument('region', type=str, help="Specified region")
+    parser_status = subparsers.add_parser('status',
+        help="Check status of PIA connection")
+    parser_status.set_defaults(func=get_status)
+    parser_status.add_argument('-v', '--verbose', action='store_true',
+        help="Print additional status information")
     parser_disconnect = subparsers.add_parser('disconnect',
         help="Disconnect from PIA")
     parser_disconnect.set_defaults(func=disconnect)

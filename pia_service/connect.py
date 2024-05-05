@@ -1,7 +1,8 @@
 import requests
 import subprocess
+import toml
 import random
-import os.path
+import os
 import sys
 from jinja2 import Environment, PackageLoader
 jinja_env = Environment(loader=PackageLoader("pia_service"))
@@ -47,7 +48,10 @@ def connect(args):
     """
     regions = get_regions()
     region = regions[args.region]
-    wg_server = random.choice(region['servers']['wg'])
+    if args.hostname is None:
+        wg_server = random.choice(region['servers']['wg'])
+    else:
+        wg_server = region['servers']['wg'][args.hostname]
 
     key, pubkey = create_keypair()
 
@@ -79,6 +83,29 @@ def connect(args):
         endpoint=f"{wg_server['ip']}:{result['server_port']}",
     )
 
+    status = {
+        'connection': {
+            'pub_ip': result['server_ip'],
+            'dns_servers': result['dns_servers'],
+            'disable_ipv6': not args.no_disable_ipv6,
+            'allow_tailscale': args.allow_tailscale,
+        },
+        'wireguard': {
+            'ip': result['peer_ip'],
+            'server_ip': result['server_vip'],
+        },
+        'server': {
+            'region': args.region,
+            'hostname': wg_server['cn'],
+            'ip': wg_server['ip'],
+            'port': result['server_port'],
+        },
+    }
+    old_umask = os.umask(0o177)
+    with open(os.path.join(package_dir, 'status.toml'), 'w') as f: 
+        toml.dump(status, f)
+    os.umask(old_umask)
+
     if not args.no_disable_ipv6:
         subprocess.run(["sudo", "sysctl", "-w", "net.ipv6.conf.all.disable_ipv6=1"])
         subprocess.run(["sudo", "sysctl", "-w", "net.ipv6.conf.default.disable_ipv6=1"])
@@ -98,4 +125,5 @@ def disconnect(args):
     subprocess.run(["sudo", "rm", "/etc/wireguard/pia.conf"])
     subprocess.run(["sudo", "sysctl", "-w", "net.ipv6.conf.all.disable_ipv6=0"])
     subprocess.run(["sudo", "sysctl", "-w", "net.ipv6.conf.default.disable_ipv6=0"])
+    os.remove(os.path.join(package_dir, 'status.toml'))
 
