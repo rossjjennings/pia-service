@@ -1,5 +1,5 @@
 from .server_info import list_regions, region_info
-from .get_token import test_get_token
+from .auth import login, logout, test_get_token
 from .connect import connect, disconnect
 
 def main():
@@ -17,13 +17,9 @@ def main():
     parser_token = subparsers.add_parser('token',
         help="Obtain an authentication token")
     parser_token.set_defaults(func=test_get_token)
-    parser_token.add_argument('-a', '--askpass', action='store_true',
-        help="Prompt for username and password")
     parser_connect = subparsers.add_parser('connect',
         help="Connect to a PIA VPN server in the specified region")
     parser_connect.set_defaults(func=connect)
-    parser_connect.add_argument('-a', '--askpass', action='store_true',
-        help="Prompt for username and password")
     parser_connect.add_argument('-t', '--allow-tailscale', action='store_true',
         help="Don't route Tailscale IP addresses (100.64.0.0/10) via PIA")
     parser_connect.add_argument('-6', '--no-disable-ipv6', action='store_true',
@@ -32,5 +28,11 @@ def main():
     parser_disconnect = subparsers.add_parser('disconnect',
         help="Disconnect from PIA")
     parser_disconnect.set_defaults(func=disconnect)
+    parser_login = subparsers.add_parser('login',
+        help="Store PIA username and password for future use")
+    parser_login.set_defaults(func=login)
+    parser_login = subparsers.add_parser('logout',
+        help="Remove stored PIA username and password")
+    parser_login.set_defaults(func=logout)
     args = parser.parse_args()
     args.func(args)

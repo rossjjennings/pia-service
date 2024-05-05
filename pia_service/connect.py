@@ -9,7 +9,7 @@ package_dir = os.path.dirname(__file__)
 
 from pia_service.server_info import get_regions
 from pia_service.transport import DNSBypassAdapter
-from pia_service.get_token import get_token
+from pia_service.auth import get_token
 
 def create_keypair():
     """
@@ -51,7 +51,11 @@ def connect(args):
 
     key, pubkey = create_keypair()
 
-    token = get_token(askpass=args.askpass)
+    token = get_token()
+    if token is None:
+        # authentication failed, and we already printed the message
+        return
+
     result = add_key(token, pubkey, wg_server['cn'], wg_server['ip'])
     if not 'status' in result or not result['status'] == 'OK':
         print("Failed to add key to server. Response was:", file=sys.stderr)
