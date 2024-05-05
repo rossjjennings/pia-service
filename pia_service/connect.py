@@ -51,7 +51,8 @@ def connect(args):
     if args.hostname is None:
         wg_server = random.choice(region['servers']['wg'])
     else:
-        wg_server = region['servers']['wg'][args.hostname]
+        wg_servers = {server['cn']: server for server in region['servers']['wg']}
+        wg_server = wg_servers[args.hostname]
 
     key, pubkey = create_keypair()
 

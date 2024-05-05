@@ -22,9 +22,9 @@ def main():
         help="Don't route Tailscale IP addresses (100.64.0.0/10) via PIA")
     parser_connect.add_argument('-6', '--no-disable-ipv6', action='store_true',
         help="Don't disable IPv6 while the PIA connection is active")
+    parser_connect.add_argument('region', type=str, help="Specified region")
     parser_connect.add_argument('hostname', nargs='?', default=None,
         help="Hostname of specific server to connect to")
-    parser_connect.add_argument('region', type=str, help="Specified region")
     parser_status = subparsers.add_parser('status',
         help="Check status of PIA connection")
     parser_status.set_defaults(func=get_status)
