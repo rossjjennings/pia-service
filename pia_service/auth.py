@@ -68,7 +68,7 @@ def login(args):
         return
     username = input("PIA username: ")
     password = getpass("PIA password: ")
-    
+
     # Make sure the username and password are valid
     token = get_token(username, password)
     if token is None:
