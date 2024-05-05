@@ -1,9 +1,11 @@
 import requests
 import subprocess
 import random
+import os.path
 import sys
 from jinja2 import Environment, PackageLoader
 jinja_env = Environment(loader=PackageLoader("pia_service"))
+package_dir = os.path.dirname(__file__)
 
 from pia_service.server_info import get_regions
 from pia_service.transport import DNSBypassAdapter
@@ -35,7 +37,7 @@ def add_key(token, pubkey, cn, ip):
     response = session.get(
         f'https://{cn}:1337/addKey',
         params={'pt': token, 'pubkey': pubkey},
-        verify="ca.rsa.4096.crt",
+        verify=os.path.join(package_dir, "ca.rsa.4096.crt"),
     )
     return response.json()
 
@@ -56,6 +58,12 @@ def connect(args):
         print(f"{result}", file=sys.stderr)
         print("Exiting.", file=sys.stderr)
         return
+    if args.allow_tailscale:
+        allowed_ips=('0.0.0.0/2, 64.0.0.0/3, 96.0.0.0/6, 100.0.0.0/10, '
+                     '100.128.0.0/9, 101.0.0.0/8, 102.0.0.0/7, 104.0.0.0/5, '
+                     '112.0.0.0/4, 128.0.0.0/1')
+    else:
+        allowed_ips='0.0.0.0/0'
 
     config_template = jinja_env.get_template('pia.conf.jinja')
     config = config_template.render(
@@ -63,10 +71,14 @@ def connect(args):
         key=key,
         dns_servers=', '.join(ip for ip in result['dns_servers']),
         server_pubkey=result['server_key'],
-        allowed_ips='0.0.0.0/0',
+        allowed_ips=allowed_ips,
         endpoint=f"{wg_server['ip']}:{result['server_port']}",
     )
 
+    if not args.no_disable_ipv6:
+        subprocess.run(["sudo", "sysctl", "-w", "net.ipv6.conf.all.disable_ipv6=1"])
+        subprocess.run(["sudo", "sysctl", "-w", "net.ipv6.conf.default.disable_ipv6=1"])
+    subprocess.run(["sudo", "mkdir", "-p", "/etc/wireguard"])
     subprocess.run(
         ["sudo", "tee", "/etc/wireguard/pia.conf"],
         input=config.encode('utf-8'),
@@ -79,4 +91,7 @@ def disconnect(args):
     Disconnect from PIA.
     """
     subprocess.run(["sudo", "wg-quick", "down", "pia"])
+    subprocess.run(["sudo", "rm", "/etc/wireguard/pia.conf"])
+    subprocess.run(["sudo", "sysctl", "-w", "net.ipv6.conf.all.disable_ipv6=0"])
+    subprocess.run(["sudo", "sysctl", "-w", "net.ipv6.conf.default.disable_ipv6=0"])
 
