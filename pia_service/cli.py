@@ -2,6 +2,7 @@ from .server_info import list_regions, region_info
 from .auth import login, logout
 from .connect import connect, disconnect
 from .status import get_status
+from .port_forward import forward_port, renew_port
 
 def main():
     import argparse
@@ -18,6 +19,8 @@ def main():
     parser_connect = subparsers.add_parser('connect',
         help="Connect to a PIA VPN server in the specified region")
     parser_connect.set_defaults(func=connect)
+    parser_connect.add_argument('-f', '--forward-port', action='store_true',
+        help="Request a forwarded port from the server")
     parser_connect.add_argument('-t', '--allow-tailscale', action='store_true',
         help="Don't route Tailscale IP addresses (100.64.0.0/10) via PIA")
     parser_connect.add_argument('-6', '--no-disable-ipv6', action='store_true',
@@ -39,5 +42,9 @@ def main():
     parser_login = subparsers.add_parser('logout',
         help="Remove stored PIA username and password")
     parser_login.set_defaults(func=logout)
+    parser_renew_port = subparsers.add_parser('renew-port',
+        help="Renew the current port forward binding"
+    )
+    parser_renew_port.set_defaults(func=renew_port)
     args = parser.parse_args()
     args.func(args)

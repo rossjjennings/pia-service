@@ -19,6 +19,9 @@ def get_status(args):
         print(f"Server WireGuard IP: {wireguard['server_ip']}")
         print(f"Using DNS servers: {', '.join(connection['dns_servers'])}")
         print(f"Server endpoint: {server['ip']}:{server['port']}")
+    if 'port_forward' in status:
+        port_forward = status['port_forward']
+        print(f"Forwarded port: {port_forward['port']}")
     if connection['disable_ipv6']:
         print("IPv6 disabled")
     else:

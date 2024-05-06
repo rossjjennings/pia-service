@@ -8,9 +8,10 @@ from jinja2 import Environment, PackageLoader
 jinja_env = Environment(loader=PackageLoader("pia_service"))
 package_dir = os.path.dirname(__file__)
 
-from pia_service.server_info import get_regions
-from pia_service.transport import DNSBypassAdapter
-from pia_service.auth import get_token
+from .server_info import get_regions
+from .transport import DNSBypassAdapter
+from .auth import get_token
+from .port_forward import forward_port
 
 def create_keypair():
     """
@@ -100,12 +101,9 @@ def connect(args):
             'hostname': wg_server['cn'],
             'ip': wg_server['ip'],
             'port': result['server_port'],
+            'allows_port_forwarding': region['port_forward'],
         },
     }
-    old_umask = os.umask(0o177)
-    with open(os.path.join(package_dir, 'status.toml'), 'w') as f: 
-        toml.dump(status, f)
-    os.umask(old_umask)
 
     if not args.no_disable_ipv6:
         subprocess.run(["sudo", "sysctl", "-w", "net.ipv6.conf.all.disable_ipv6=1"])
@@ -117,6 +115,14 @@ def connect(args):
         stdout=subprocess.DEVNULL,
     )
     subprocess.run(["sudo", "wg-quick", "up", "pia"])
+
+    if args.forward_port:
+        status = forward_port(status, token)
+
+    old_umask = os.umask(0o177)
+    with open(os.path.join(package_dir, 'status.toml'), 'w') as f: 
+        toml.dump(status, f)
+    os.umask(old_umask)
 
 def disconnect(args):
     """
