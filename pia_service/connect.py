@@ -69,19 +69,14 @@ def connect(args):
         print("Exiting.", file=sys.stderr)
         return
     if args.allow_tailscale:
-        allowed_ips=('0.0.0.0/2, 64.0.0.0/3, 96.0.0.0/6, 100.0.0.0/10, '
-                     '100.128.0.0/9, 101.0.0.0/8, 102.0.0.0/7, 104.0.0.0/5, '
-                     '112.0.0.0/4, 128.0.0.0/1')
+        config_template = jinja_env.get_template('pia-tailscale.conf.jinja')
     else:
-        allowed_ips='0.0.0.0/0'
-
-    config_template = jinja_env.get_template('pia.conf.jinja')
+        config_template = jinja_env.get_template('pia.conf.jinja')
     config = config_template.render(
         peer_ip=result['peer_ip'],
         key=key,
         dns_servers=', '.join(ip for ip in result['dns_servers']),
         server_pubkey=result['server_key'],
-        allowed_ips=allowed_ips,
         endpoint=f"{wg_server['ip']}:{result['server_port']}",
     )
 

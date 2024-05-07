@@ -1,0 +1,16 @@
+[Interface]
+Address = {{ peer_ip }}
+PrivateKey = {{ key }}
+DNS = {{ dns_servers }}
+FwMark = 16673
+Table = 16673
+PostUp = ip -4 rule add priority 6090 not fwmark 16673 table 16673
+PostUp = ip -4 rule add priority 6080 table main suppress_prefixlength 0
+PreDown = ip -4 rule delete table 16673
+PreDown = ip -4 rule delete table main suppress_prefixlength 0
+
+[Peer]
+PersistentKeepalive = 25
+PublicKey = {{ server_pubkey }}
+AllowedIPs = 0.0.0.0/2, 64.0.0.0/3, 96.0.0.0/6, 100.0.0.0/10, 100.128.0.0/9, 101.0.0.0/8, 102.0.0.0/7, 104.0.0.0/5, 112.0.0.0/4, 128.0.0.0/1
+Endpoint = {{ endpoint }}
