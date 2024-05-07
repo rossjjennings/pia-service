@@ -75,7 +75,7 @@ def connect(args):
     config = config_template.render(
         peer_ip=result['peer_ip'],
         key=key,
-        dns_servers=', '.join(ip for ip in result['dns_servers']),
+        dns_servers=' '.join(ip for ip in result['dns_servers']),
         server_pubkey=result['server_key'],
         endpoint=f"{wg_server['ip']}:{result['server_port']}",
     )

@@ -1,7 +1,8 @@
 [Interface]
 Address = {{ peer_ip }}
 PrivateKey = {{ key }}
-DNS = {{ dns_servers }}
+PostUp = resolvectl dns %i {{ dns_servers }}
+PostUp = resolvectl domain %i ~.
 
 [Peer]
 PersistentKeepalive = 25
