@@ -3,6 +3,7 @@ from .auth import login, logout
 from .connect import connect, disconnect
 from .status import get_status
 from .port_forward import forward_port, renew_port
+from .enable import enable, disable
 
 def main():
     import argparse
@@ -34,6 +35,19 @@ def main():
     parser_disconnect = subparsers.add_parser('disconnect',
         help="Disconnect from PIA")
     parser_disconnect.set_defaults(func=disconnect)
+    parser_enable = subparsers.add_parser('enable',
+        help="Create a persistent connection to a PIA VPN server in the specified region")
+    parser_enable.set_defaults(func=enable)
+    parser_enable.add_argument('-f', '--forward-port', action='store_true',
+        help="Request a forwarded port from the server")
+    parser_enable.add_argument('-6', '--no-disable-ipv6', action='store_true',
+        help="Don't disable IPv6 while the PIA connection is active")
+    parser_enable.add_argument('region', type=str, help="Specified region")
+    parser_enable.add_argument('hostname', nargs='?', default=None,
+        help="Hostname of specific server to connect to")
+    parser_disable = subparsers.add_parser('disable',
+        help="Disable a connection and remove associated files")
+    parser_disable.set_defaults(func=disable)
     parser_login = subparsers.add_parser('login',
         help="Store PIA username and password for future use")
     parser_login.set_defaults(func=login)
