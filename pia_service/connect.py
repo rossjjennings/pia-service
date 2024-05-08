@@ -5,7 +5,7 @@ import random
 import os
 import sys
 from jinja2 import Environment, PackageLoader
-jinja_env = Environment(loader=PackageLoader("pia_service"))
+jinja_env = Environment(loader=PackageLoader("pia_service"), trim_blocks=True)
 package_dir = os.path.dirname(__file__)
 
 from .server_info import get_regions
@@ -111,6 +111,7 @@ def configure(region, hostname=None, disable_ipv6=True):
         dns_servers=' '.join(ip for ip in result['dns_servers']),
         server_pubkey=result['server_key'],
         endpoint=f"{server['ip']}:{result['server_port']}",
+        disable_ipv6=disable_ipv6,
     )
 
     status = {
@@ -152,9 +153,6 @@ def connect(args):
         # The above failed for some reason
         return
 
-    if not args.no_disable_ipv6:
-        subprocess.run(["sudo", "sysctl", "-w", "net.ipv6.conf.all.disable_ipv6=1"])
-        subprocess.run(["sudo", "sysctl", "-w", "net.ipv6.conf.default.disable_ipv6=1"])
     subprocess.run(["sudo", "mkdir", "-p", "/etc/wireguard"])
     subprocess.run(
         ["sudo", "tee", "/etc/wireguard/pia.conf"],
@@ -177,7 +175,5 @@ def disconnect(args):
     """
     subprocess.run(["sudo", "wg-quick", "down", "pia"])
     subprocess.run(["sudo", "rm", "/etc/wireguard/pia.conf"])
-    subprocess.run(["sudo", "sysctl", "-w", "net.ipv6.conf.all.disable_ipv6=0"])
-    subprocess.run(["sudo", "sysctl", "-w", "net.ipv6.conf.default.disable_ipv6=0"])
     os.remove(os.path.join(package_dir, 'status.toml'))
 
