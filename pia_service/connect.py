@@ -73,7 +73,7 @@ def get_server(region, hostname=None):
         server = wg_servers[hostname]
     return region, server
 
-def configure(region, hostname=None, tailscale=False, disable_ipv6=True):
+def configure(region, hostname=None, disable_ipv6=True):
     """
     Set up a PIA WireGuard connection by creating a WireGuard keypair,
     adding the public key to a specified PIA server, and filling in the
@@ -83,7 +83,6 @@ def configure(region, hostname=None, tailscale=False, disable_ipv6=True):
     ----------
     region: Name of a PIA region
     hostname: (Optional) Hostname of preferred server
-    tailscale: Use Tailscale-specific configuration
     disable_ipv6: Whether IPv6 is to be disabled (used only for status)
 
     Returns
@@ -105,10 +104,7 @@ def configure(region, hostname=None, tailscale=False, disable_ipv6=True):
         print(f"{result}", file=sys.stderr)
         print("Exiting.", file=sys.stderr)
         return
-    if tailscale:
-        config_template = jinja_env.get_template('pia-tailscale.conf.jinja')
-    else:
-        config_template = jinja_env.get_template('pia.conf.jinja')
+    config_template = jinja_env.get_template('pia.conf.jinja')
     config = config_template.render(
         peer_ip=result['peer_ip'],
         key=key,
@@ -122,7 +118,6 @@ def configure(region, hostname=None, tailscale=False, disable_ipv6=True):
             'pub_ip': result['server_ip'],
             'dns_servers': result['dns_servers'],
             'disable_ipv6': disable_ipv6,
-            'allow_tailscale': tailscale,
         },
         'wireguard': {
             'ip': result['peer_ip'],
@@ -151,8 +146,7 @@ def connect(args):
         print('Device "pia" already exists, aborting.', file=sys.stderr)
         return
 
-    result = configure(args.region, args.hostname, tailscale=args.allow_tailscale,
-                       disable_ipv6=(not args.no_disable_ipv6))
+    result = configure(args.region, args.hostname, not args.no_disable_ipv6)
     config, status = result
     if config is None:
         # The above failed for some reason

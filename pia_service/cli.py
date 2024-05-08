@@ -21,8 +21,6 @@ def main():
     parser_connect.set_defaults(func=connect)
     parser_connect.add_argument('-f', '--forward-port', action='store_true',
         help="Request a forwarded port from the server")
-    parser_connect.add_argument('-t', '--allow-tailscale', action='store_true',
-        help="Don't route Tailscale IP addresses (100.64.0.0/10) via PIA")
     parser_connect.add_argument('-6', '--no-disable-ipv6', action='store_true',
         help="Don't disable IPv6 while the PIA connection is active")
     parser_connect.add_argument('region', type=str, help="Specified region")

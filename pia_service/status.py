@@ -26,5 +26,3 @@ def get_status(args):
         print("IPv6 disabled")
     else:
         print("IPv6 not disabled")
-    if connection['allow_tailscale']:
-        print("Tailscale addresses exempted from VPN routing")
