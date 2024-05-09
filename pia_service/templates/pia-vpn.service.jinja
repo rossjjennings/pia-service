@@ -1,0 +1,11 @@
+[Unit]
+Description=Private Internet Access VPN connection
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart={{ python_interpreter }} {{ package_dir }}/cli.py connect {{ args }}
+ExecStop={{ python_interpreter }} {{ package_dir }}/cli.py disconnect
+
+[Install]
+WantedBy=multi-user.target

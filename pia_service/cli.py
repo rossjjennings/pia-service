@@ -60,3 +60,6 @@ def main():
     parser_renew_port.set_defaults(func=renew_port)
     args = parser.parse_args()
     args.func(args)
+
+if __name__ == '__main__':
+    main()
