@@ -10,8 +10,13 @@ package_dir = os.path.dirname(__file__)
 
 from .server_info import get_regions
 from .transport import DNSBypassAdapter
-from .auth import get_token
+from .auth import get_token, AuthFailure
 from .port_forward import forward_port
+
+class KeyAddFailure(Exception):
+    def __init__(self, response):
+        super().__init__(response)
+        self.response = response
 
 def create_keypair():
     """
@@ -44,7 +49,10 @@ def add_key(token, pubkey, server):
         params={'pt': token, 'pubkey': pubkey},
         verify=os.path.join(package_dir, "ca.rsa.4096.crt"),
     )
-    return response.json()
+    response_json = response.json()
+    if not 'status' in response_json or not response_json['status'] == 'OK':
+        raise KeyAddFailure(response=response_json)
+    return response_json
 
 def get_server(region, hostname=None):
     """
@@ -73,7 +81,7 @@ def get_server(region, hostname=None):
         server = wg_servers[hostname]
     return region, server
 
-def configure(region, hostname=None, disable_ipv6=True):
+def configure(token, region, hostname=None, disable_ipv6=True):
     """
     Set up a PIA WireGuard connection by creating a WireGuard keypair,
     adding the public key to a specified PIA server, and filling in the
@@ -81,6 +89,7 @@ def configure(region, hostname=None, disable_ipv6=True):
 
     Parameters
     ----------
+    token: Valid PIA authentication token
     region: Name of a PIA region
     hostname: (Optional) Hostname of preferred server
     disable_ipv6: Whether IPv6 is to be disabled (used only for status)
@@ -92,18 +101,8 @@ def configure(region, hostname=None, disable_ipv6=True):
     """
     region, server = get_server(region, hostname)
     key, pubkey = create_keypair()
-    
-    token = get_token()
-    if token is None:
-        # authentication failed, and we already printed the message
-        return
 
     result = add_key(token, pubkey, server)
-    if not 'status' in result or not result['status'] == 'OK':
-        print("Failed to add key to server. Response was:", file=sys.stderr)
-        print(f"{result}", file=sys.stderr)
-        print("Exiting.", file=sys.stderr)
-        return
     config_template = jinja_env.get_template('pia.conf.jinja')
     config = config_template.render(
         peer_ip=result['peer_ip'],
@@ -128,7 +127,7 @@ def configure(region, hostname=None, disable_ipv6=True):
             'server_pubkey': result['server_key'],
         },
         'server': {
-            'region': region,
+            'region': region['name'],
             'hostname': server['cn'],
             'ip': server['ip'],
             'port': result['server_port'],
@@ -147,11 +146,30 @@ def connect(args):
         print('Device "pia" already exists, aborting.', file=sys.stderr)
         return
 
-    result = configure(args.region, args.hostname, not args.no_disable_ipv6)
-    config, status = result
-    if config is None:
-        # The above failed for some reason
+    try:
+        token = get_token()
+    except AuthFailure as exc:
+        print("PIA authentication failed. Received response:")
+        print(exc.response)
+        print("Exiting.")
         return
+    else:
+        print("PIA authentication OK")
+
+    try:
+        config, status = configure(
+            token,
+            args.region,
+            args.hostname,
+            not args.no_disable_ipv6
+        )
+    except KeyAddFailure as exc:
+        print("Failed to add key to server. Response was:", file=sys.stderr)
+        print(f"{exc.reponse}", file=sys.stderr)
+        print("Exiting.", file=sys.stderr)
+        return
+    else:
+        print("Successfully added WireGuard key to server")
 
     subprocess.run(["sudo", "mkdir", "-p", "/etc/wireguard"])
     subprocess.run(

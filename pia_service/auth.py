@@ -4,6 +4,11 @@ from getpass import getpass
 import os.path
 package_dir = os.path.dirname(__file__)
 
+class AuthFailure(Exception):
+    def __init__(self, response):
+        super().__init__(response)
+        self.response = response
+
 def get_credentials():
     """
     Get the user's PIA username and password, either from disk by
@@ -36,13 +41,9 @@ def get_token(username=None, password=None):
     )
     try:
         response_json = response.json()
-    except:
-        print("PIA authentication failed. Received response:")
-        print(response.content.decode('utf-8'))
-        print("Exiting.")
-        return
-    else:
-        print("PIA authentication OK")
+    except requests.JSONDecodeError as e:
+        response_content = response.content.decode('utf-8').strip()
+        raise AuthFailure(response=response_content) from None
     token = response_json['token']
     return token
 
