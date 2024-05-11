@@ -12,7 +12,7 @@ def get_status(args):
     connection = status['connection']
     server = status['server']
     wireguard = status['wireguard']
-    print(f"Connected to {server['region']} ({server['hostname']}) via WireGuard")
+    print(f"Connected to {server['region']} ({server['cn']}) via WireGuard")
     print(f"Public IP address: {connection['pub_ip']}")
     if args.verbose:
         print(f"WireGuard IP address: {wireguard['ip']}")
@@ -22,6 +22,8 @@ def get_status(args):
     if 'port_forward' in status:
         port_forward = status['port_forward']
         print(f"Forwarded port: {port_forward['port']}")
+        if args.verbose:
+            print(f"Port expires at: {port_forward['expires_at']}")
     if connection['disable_ipv6']:
         print("IPv6 disabled")
     else:

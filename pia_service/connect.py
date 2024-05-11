@@ -128,7 +128,7 @@ def configure(token, region, hostname=None, disable_ipv6=True):
         },
         'server': {
             'region': region['name'],
-            'hostname': server['cn'],
+            'cn': server['cn'],
             'ip': server['ip'],
             'port': result['server_port'],
             'allows_port_forwarding': region['port_forward'],
@@ -179,13 +179,29 @@ def connect(args):
     )
     subprocess.run(["sudo", "wg-quick", "up", "pia"])
 
-    if args.forward_port:
-        status = forward_port(status, token)
+    try:
+        if args.forward_port or args.request_new_port:
+            authorities = {}
+            authority_file = os.path.join(package_dir, "port_authority.toml")
+            if os.path.exists(authority_file):
+                with open(authority_file, 'r') as f:
+                    authorities = toml.load(f)['authority']
+            if args.forward_port and authorities:
+                # get most recent authority
+                authority = max(authorities, key=lambda auth: auth['expires_at'])
+                print(f"Attempting to bind existing port {authority['port']}")
+            else:
+                authority = {'token': token}
+                print("Requesting new forwarded port")
 
-    old_umask = os.umask(0o177)
-    with open(os.path.join(package_dir, 'status.toml'), 'w') as f: 
-        toml.dump(status, f)
-    os.umask(old_umask)
+            status = forward_port(status, authority)
+    finally:
+        # make sure to write the status file even if we hit an exception
+        # during port forwarding somewhere
+        old_umask = os.umask(0o177)
+        with open(os.path.join(package_dir, 'status.toml'), 'w') as f:
+            toml.dump(status, f)
+        os.umask(old_umask)
 
 def disconnect(args):
     """

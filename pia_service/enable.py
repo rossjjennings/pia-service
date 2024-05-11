@@ -5,7 +5,6 @@ import sys
 from .connect import configure
 from .port_forward import forward_port
 package_dir = os.path.dirname(__file__)
-print(package_dir)
 
 def enable(args):
     """

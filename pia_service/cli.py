@@ -39,7 +39,9 @@ def main():
         help="Create a persistent connection to a PIA VPN server in the specified region")
     parser_enable.set_defaults(func=enable)
     parser_enable.add_argument('-f', '--forward-port', action='store_true',
-        help="Request a forwarded port from the server")
+        help="Forward a port, using previously forwarded port if possible")
+    parser_enable.add_argument('-F', '--request-new-port', action='store_true',
+        help="Forward a port, ignoring previous ports and requesting a new one")
     parser_enable.add_argument('-6', '--no-disable-ipv6', action='store_true',
         help="Don't disable IPv6 while the PIA connection is active")
     parser_enable.add_argument('region', type=str, help="Specified region")
