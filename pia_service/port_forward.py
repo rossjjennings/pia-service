@@ -149,12 +149,11 @@ def forward_port(status, authority, wait=5):
         old_umask = os.umask(0o177)
         with open(os.path.join(package_dir, "port_authority.toml"), "r") as f:
             authorities = toml.load(f)
-        authorities.append(authority)
+        authorities['authority'].append(authority)
         with open(os.path.join(package_dir, "port_authority.toml"), "w") as f:
             toml.dump(authorities, f)
         os.umask(old_umask)
 
-    print(f"server={server}")
     bind_port(server, payload, signature)
 
     return status
