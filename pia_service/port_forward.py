@@ -10,6 +10,37 @@ from .auth import get_token
 from .transport import DNSBypassAdapter
 package_dir = os.path.dirname(__file__)
 
+def bind_port(cn, ip, payload, signature):
+    """
+    Bind a port for which we have already received a payload and signature.
+    Requires an open connection to a server that allows port forwarding.
+    """
+    session = requests.Session()
+    session.mount(f'https://{cn}', DNSBypassAdapter(cn, ip))
+    try:
+        response = session.get(
+            f'https://{cn}:19999/bindPort',
+            params={'payload': payload, 'signature': signature},
+            verify=os.path.join(package_dir, "ca.rsa.4096.crt"),
+            timeout=5,
+        )
+    except requests.exceptions.Timeout:
+        print(f"Request to https://{cn}:19999/bindPort timed out", file=sys.stderr)
+        print("Abandoning attempt to bind port.", file=sys.stderr)
+        return
+    response_json = response.json()
+    if 'status' not in response_json or response_json['status'] != 'OK':
+        print("Failed to bind port. Response was:", file=sys.stderr)
+        print(f"{response_json}", file=sys.stderr)
+        print("Exiting.", file=sys.stderr)
+        return
+    else:
+        payload_json = json.loads(base64.b64decode(payload).decode('utf-8'))
+        port = payload_json['port']
+        print(f"Successfully bound to port {port}")
+        if 'message' in response_json:
+            print(f"Server responds: {response_json['message']}")
+
 def forward_port(status, token):
     """
     Request that the server forward a port to the local host.
@@ -96,34 +127,3 @@ def renew_port(args):
     payload = status['port_forward']['payload']
     signature = status['port_forward']['signature']
     bind_port(cn, ip, payload, signature)
-
-def bind_port(cn, ip, payload, signature):
-    """
-    Bind a port for which we have already received a payload and signature.
-    Requires an open connection to a server that allows port forwarding.
-    """
-    session = requests.Session()
-    session.mount(f'https://{cn}', DNSBypassAdapter(cn, ip))
-    try:
-        response = session.get(
-            f'https://{cn}:19999/bindPort',
-            params={'payload': payload, 'signature': signature},
-            verify=os.path.join(package_dir, "ca.rsa.4096.crt"),
-            timeout=5,
-        )
-    except requests.exceptions.Timeout:
-        print(f"Request to https://{cn}:19999/bindPort timed out", file=sys.stderr)
-        print("Abandoning attempt to bind port.", file=sys.stderr)
-        return
-    response_json = response.json()
-    if 'status' not in response_json or response_json['status'] != 'OK':
-        print("Failed to bind port. Response was:", file=sys.stderr)
-        print(f"{response_json}", file=sys.stderr)
-        print("Exiting.", file=sys.stderr)
-        return
-    else:
-        payload_json = json.loads(base64.b64decode(payload).decode('utf-8'))
-        port = payload_json['port']
-        print(f"Successfully bound to port {port}")
-        if 'message' in response_json:
-            print(f"Server responds: {response_json['message']}")
