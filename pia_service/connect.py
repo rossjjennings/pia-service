@@ -4,6 +4,7 @@ import toml
 import random
 import os
 import sys
+from datetime import datetime
 from jinja2 import Environment, PackageLoader
 jinja_env = Environment(loader=PackageLoader("pia_service"), trim_blocks=True)
 package_dir = os.path.dirname(__file__)
@@ -189,7 +190,19 @@ def connect(args):
             if args.forward_port and authorities:
                 # get most recent authority
                 authority = max(authorities, key=lambda auth: auth['expires_at'])
-                print(f"Attempting to bind existing port {authority['port']}")
+                # check expiration
+                # PIA provides expiration dates to ns precision, but `datetime`
+                # doesn't know how to handle that, and the relevant clocks aren't
+                # that accurate anyway, so truncate at the us level.
+                expiration = datetime.strptime(
+                    authority['expires_at'][:26], '%Y-%m-%dT%H:%M:%S.%f'
+                )
+                if datetime.utcnow() >= expiration:
+                    print(f"Authority for port {authority['port']} is expired")
+                    print("Requesting new forwarded port")
+                    authority = {'token': token}
+                else:
+                    print(f"Attempting to bind existing port {authority['port']}")
             else:
                 authority = {'token': token}
                 print("Requesting new forwarded port")
