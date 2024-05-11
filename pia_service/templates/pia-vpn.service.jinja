@@ -1,5 +1,9 @@
 [Unit]
 Description=Private Internet Access VPN connection
+{% if forward_port %}
+Wants=pia-pf-renew.service
+Before=pia-pf-renew.service
+{% endif %}
 
 [Service]
 Type=oneshot
