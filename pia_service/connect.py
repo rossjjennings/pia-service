@@ -220,6 +220,14 @@ def disconnect(args):
     """
     Disconnect from PIA.
     """
+    try:
+        with open(os.path.join(package_dir, 'status.toml'), 'r') as f:
+            status = toml.load(f)
+    except FileNotFoundError:
+        pass
+    else:
+        if 'port_forward' in status:
+            subprocess.run(["systemctl", "--user", "stop", "pia-pf-renew.timer"])
     subprocess.run(["sudo", "wg-quick", "down", "pia"])
     subprocess.run(["sudo", "rm", "/etc/wireguard/pia.conf"])
     os.remove(os.path.join(package_dir, 'status.toml'))

@@ -1,10 +1,13 @@
 import requests
+import subprocess
 import toml
 import json
 import os
 import sys
+import sysconfig
 import time
 import base64
+from datetime import datetime
 
 from .auth import get_token
 from .transport import DNSBypassAdapter
@@ -55,6 +58,10 @@ def bind_port(server, payload, signature):
     ----------
     server: Server on which to bind the port
     payload, signature: Payload and signature received from PIA
+
+    Returns
+    -------
+    success: Whether binding the port was successful
     """
     cn = server['cn']
     ip = server['ip']
@@ -70,19 +77,20 @@ def bind_port(server, payload, signature):
     except requests.exceptions.Timeout:
         print(f"Request to https://{cn}:19999/bindPort timed out", file=sys.stderr)
         print("Abandoning attempt to bind port.", file=sys.stderr)
-        return
+        return False
     response_json = response.json()
     if 'status' not in response_json or response_json['status'] != 'OK':
         print("Failed to bind port. Response was:", file=sys.stderr)
         print(f"{response_json}", file=sys.stderr)
         print("Exiting.", file=sys.stderr)
-        return
+        return False
     else:
         payload_json = json.loads(base64.b64decode(payload).decode('utf-8'))
         port = payload_json['port']
         print(f"Successfully bound to port {port}")
         if 'message' in response_json:
             print(f"Server responds: {response_json['message']}")
+        return True
 
 def forward_port(status, authority, wait=5):
     """
@@ -142,6 +150,7 @@ def forward_port(status, authority, wait=5):
         'expires_at': expires_at,
         'payload': payload,
         'signature': signature,
+        'last_renewed': datetime.strftime(datetime.utcnow(), "%Y-%m-%dT%H:%M:%S.%fZ")
     }
     status['port_forward'] = authority
 
@@ -152,7 +161,16 @@ def forward_port(status, authority, wait=5):
             toml.dump({'authority': [authority]}, f)
         os.umask(old_umask)
 
-    bind_port(server, payload, signature)
+    if bind_port(server, payload, signature):
+        subprocess.run([
+            "systemd-run",
+            "--user",
+            "--unit=pia-pf-renew",
+            "--on-active=15m",
+            "--on-unit-active=15m",
+            os.path.join(sysconfig.get_path("scripts"), "pia-service"),
+            "renew-port",
+        ])
 
     return status
 
@@ -176,4 +194,11 @@ def renew_port(args):
     signature = status['port_forward']['signature']
 
     print(f"Attempting to re-bind to port {status['port_forward']['port']}")
-    bind_port(server, payload, signature)
+
+    if bind_port(server, payload, signature):
+        now = datetime.strftime(datetime.utcnow(), "%Y-%m-%dT%H:%M:%S.%fZ")
+        status['port_forward']['last_renewed'] = now
+        old_umask = os.umask(0o177)
+        with open(os.path.join(package_dir, 'status.toml'), 'w') as f:
+            toml.dump(status, f)
+        os.umask(old_umask)

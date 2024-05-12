@@ -24,6 +24,7 @@ def get_status(args):
         print(f"Forwarded port: {port_forward['port']}")
         if args.verbose:
             print(f"Port expires at: {port_forward['expires_at']}")
+            print(f"Port last renewed at: {port_forward['last_renewed']}")
     if connection['disable_ipv6']:
         print("IPv6 disabled")
     else:
