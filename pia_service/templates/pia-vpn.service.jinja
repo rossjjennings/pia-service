@@ -8,8 +8,8 @@ Before=pia-pf-renew.service
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStart={{ python_interpreter }} {{ package_dir }}/cli.py connect {{ args }}
-ExecStop={{ python_interpreter }} {{ package_dir }}/cli.py disconnect
+ExecStart={{ pia_service }} connect {{ args }}
+ExecStop={{ pia_service }} disconnect
 
 [Install]
 WantedBy=multi-user.target
