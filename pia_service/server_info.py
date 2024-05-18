@@ -11,6 +11,10 @@ def get_regions(as_dict=True):
 
 def list_regions(args):
     regions = get_regions(as_dict=False)
+    if args.no_geo:
+        regions = [region for region in regions if not region['geo']]
+    if args.port_forward:
+        regions = [region for region in regions if region['port_forward']]
     print('Available regions:')
     for region in sorted(regions, key=lambda region: region['name']):
         print(f" - {region['name']} ({region['id']})")
@@ -24,12 +28,6 @@ def region_info(args):
     print(f"Geolocated: {region['geo']}")
     print(f"Offline: {region['offline']}")
     print(f"Port forwarding: {region['port_forward']}")
-    print('OpenVPN TCP servers:')
-    for server in servers['ovpntcp']:
-        print(f" - {server['cn']} @ {server['ip']}")
-    print('OpenVPN UDP servers:')
-    for server in servers['ovpnudp']:
-        print(f" - {server['cn']} @ {server['ip']}")
     print('WireGuard servers:')
     for server in servers['wg']:
         print(f" - {server['cn']} @ {server['ip']}")

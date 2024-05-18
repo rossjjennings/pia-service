@@ -9,10 +9,14 @@ def main():
     import argparse
 
     parser = argparse.ArgumentParser()
-    subparsers = parser.add_subparsers()
+    subparsers = parser.add_subparsers(metavar="command")
     parser_list_regions = subparsers.add_parser('list-regions',
         help="List available regions")
     parser_list_regions.set_defaults(func=list_regions)
+    parser_list_regions.add_argument('-g', '--no-geo', action='store_true',
+        help="Show only non-geolocated regions")
+    parser_list_regions.add_argument('-p', '--port-forward', action='store_true',
+        help="Show only regions with port forwarding enabled")
     parser_region = subparsers.add_parser('region',
         help="List servers in a specified region")
     parser_region.set_defaults(func=region_info)
@@ -38,7 +42,7 @@ def main():
         help="Disconnect from PIA")
     parser_disconnect.set_defaults(func=disconnect)
     parser_enable = subparsers.add_parser('enable',
-        help="Create a persistent connection to a PIA VPN server in the specified region")
+        help="Create a persistent connection to a PIA VPN server")
     parser_enable.set_defaults(func=enable)
     parser_enable.add_argument('-f', '--forward-port', action='store_true',
         help="Forward a port, using previously forwarded port if possible")
