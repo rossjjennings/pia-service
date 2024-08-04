@@ -1,9 +1,9 @@
-from .server_info import list_regions, region_info
-from .auth import login, logout
-from .connect import connect, disconnect
-from .status import get_status
-from .port_forward import forward_port, renew_port
-from .enable import enable, disable
+from pia_service.server_info import list_regions, region_info
+from pia_service.auth import login, logout
+from pia_service.connect import connect, disconnect
+from pia_service.status import get_status
+from pia_service.port_forward import forward_port, renew_port
+from pia_service.enable import enable, disable
 
 def main():
     import argparse

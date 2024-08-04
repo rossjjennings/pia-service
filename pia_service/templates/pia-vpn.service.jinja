@@ -8,6 +8,7 @@ Before=pia-pf-renew.service
 [Service]
 Type=oneshot
 RemainAfterExit=yes
+Environment="PYTHONPATH={{ site_packages }}"
 ExecStart={{ pia_service }} connect {{ args }}
 ExecStop={{ pia_service }} disconnect
 
