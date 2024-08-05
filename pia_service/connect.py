@@ -211,7 +211,7 @@ def connect(args):
     finally:
         # make sure to write the status file even if we hit an exception
         # during port forwarding somewhere
-        old_umask = os.umask(0o177)
+        old_umask = os.umask(0o133)
         with open(os.path.join(package_dir, 'status.toml'), 'w') as f:
             toml.dump(status, f)
         os.umask(old_umask)
@@ -229,6 +229,6 @@ def disconnect(args):
         if 'port_forward' in status:
             subprocess.run(["systemctl", "--user", "stop", "pia-pf-renew.timer"])
     subprocess.run(["sudo", "wg-quick", "down", "pia"])
-    subprocess.run(["sudo", "rm", "/etc/wireguard/pia.conf"])
+    #subprocess.run(["sudo", "rm", "/etc/wireguard/pia.conf"])
     os.remove(os.path.join(package_dir, 'status.toml'))
 
