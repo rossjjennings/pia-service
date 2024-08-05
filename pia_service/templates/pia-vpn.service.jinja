@@ -8,8 +8,9 @@ Before=pia-pf-renew.service
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStart=wg-quick up pia
-ExecStop=wg-quick down pia
+ExecStart=/usr/bin/wg-quick up pia
+ExecStop=/usr/bin/wg-quick down pia
+ExecReload=/bin/bash -c 'exec /usr/bin/wg syncconf pia <(exec /usr/bin/wg-quick strip pia)'
 
 [Install]
 WantedBy=multi-user.target
