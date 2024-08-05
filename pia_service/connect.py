@@ -4,6 +4,8 @@ import toml
 import random
 import os
 import sys
+import getpass
+import sysconfig
 from datetime import datetime
 from jinja2 import Environment, PackageLoader
 jinja_env = Environment(loader=PackageLoader("pia_service"), trim_blocks=True)
@@ -178,10 +180,35 @@ def connect(args):
         input=config.encode('utf-8'),
         stdout=subprocess.DEVNULL,
     )
-    subprocess.run(["sudo", "wg-quick", "up", "pia"])
+
+    service_template = jinja_env.get_template("pia-vpn.service.jinja")
+    service = service_template.render(forward_port=args.forward_port)
+    subprocess.run(
+        ["sudo", "tee", "/etc/systemd/system/pia-vpn.service"],
+        input=service.encode('utf-8'),
+        stdout=subprocess.DEVNULL,
+    )
+    subprocess.run(["sudo", "systemctl", "start", "pia-vpn.service"])
 
     try:
         if args.forward_port or args.request_new_port:
+            timer = jinja_env.get_template("pia-pf-renew.timer").render()
+            timer_service = jinja_env.get_template("pia-pf-renew.service.jinja").render(
+                user=getpass.getuser(),
+                pia_service=os.path.join(sysconfig.get_path("scripts"), "pia-service"),
+            )
+            subprocess.run(
+                ["sudo", "tee", "/etc/systemd/system/pia-pf-renew.timer"],
+                input=timer.encode('utf-8'),
+                stdout=subprocess.DEVNULL,
+            )
+            subprocess.run(
+                ["sudo", "tee", "/etc/systemd/system/pia-pf-renew.service"],
+                input=timer_service.encode('utf-8'),
+                stdout=subprocess.DEVNULL,
+            )
+            subprocess.run(["sudo", "systemctl", "start", "pia-pf-renew.timer"])
+
             authorities = {}
             authority_file = os.path.join(package_dir, "port_authority.toml")
             if os.path.exists(authority_file):
@@ -211,7 +238,7 @@ def connect(args):
     finally:
         # make sure to write the status file even if we hit an exception
         # during port forwarding somewhere
-        old_umask = os.umask(0o133)
+        old_umask = os.umask(0o177)
         with open(os.path.join(package_dir, 'status.toml'), 'w') as f:
             toml.dump(status, f)
         os.umask(old_umask)
@@ -227,8 +254,7 @@ def disconnect(args):
         pass
     else:
         if 'port_forward' in status:
-            subprocess.run(["systemctl", "--user", "stop", "pia-pf-renew.timer"])
-    subprocess.run(["sudo", "wg-quick", "down", "pia"])
-    #subprocess.run(["sudo", "rm", "/etc/wireguard/pia.conf"])
+            subprocess.run(["sudo", "systemctl", "stop", "pia-pf-renew.timer"])
+    subprocess.run(["sudo", "systemctl", "stop", "pia-vpn.service"])
     os.remove(os.path.join(package_dir, 'status.toml'))
 

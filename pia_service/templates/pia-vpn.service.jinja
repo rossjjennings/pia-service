@@ -8,9 +8,8 @@ Before=pia-pf-renew.service
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-Environment="PYTHONPATH={{ site_packages }}"
-ExecStart={{ python }} {{ pia_service }} connect {{ args }}
-ExecStop={{ python }} {{ pia_service }} disconnect
+ExecStart=wg-quick up pia
+ExecStop=wg-quick down pia
 
 [Install]
 WantedBy=multi-user.target

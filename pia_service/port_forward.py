@@ -161,17 +161,7 @@ def forward_port(status, authority, wait=5):
             toml.dump({'authority': [authority]}, f)
         os.umask(old_umask)
 
-    if bind_port(server, payload, signature):
-        subprocess.run([
-            "systemd-run",
-            "--user",
-            "--unit=pia-pf-renew",
-            "--on-active=15m",
-            "--on-unit-active=15m",
-            os.path.join(sysconfig.get_path("scripts"), "pia-service"),
-            "renew-port",
-        ])
-
+    bind_port(server, payload, signature)
     return status
 
 def renew_port(args):

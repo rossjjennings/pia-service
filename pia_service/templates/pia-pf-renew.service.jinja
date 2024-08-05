@@ -3,4 +3,5 @@ Description=Renew port forward for PIA VPN
 
 [Service]
 Type=oneshot
+User={{ user }}
 ExecStart={{ pia_service }} renew-port
