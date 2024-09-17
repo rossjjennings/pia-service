@@ -40,6 +40,14 @@ class DNSBypassAdapter(HTTPAdapter):
         redirected_url = url.replace(self.common_name, self.host)
         return super().get_connection(redirected_url, proxies=proxies)
 
+    def get_connection_with_tls_context(self, request, verify, proxies=None, cert=None):
+        """
+        Replaces get_connection() in requests >= 2.32.
+        For now I'm leaving both in place.
+        """
+        request.url = request.url.replace(self.common_name, self.host)
+        return super().get_connection_with_tls_context(request, verify, proxies=proxies, cert=cert)
+
     def init_poolmanager(self, connections, maxsize, **kwargs):
         """
         Override the init_poolmanager() method of the base HTTPSAdapter,
